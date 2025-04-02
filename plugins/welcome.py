@@ -2,8 +2,9 @@ from telegram.ext import CommandHandler, CallbackQueryHandler
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 import os
 
-# Path to the image
+# Paths
 IMAGE_PATH = os.path.join("src", "frozen.jpg")
+AUDIO_PATH = os.path.join("src", "frozen.mpeg")
 
 # Main welcome keyboard
 def get_welcome_keyboard():
@@ -15,7 +16,7 @@ def get_welcome_keyboard():
     ]
     return InlineKeyboardMarkup(keyboard)
 
-# Sub-menu keyboard for "Menu"
+# Sub-menu keyboard
 def get_menu_keyboard():
     keyboard = [
         [InlineKeyboardButton("✨ Ice Magic", callback_data="ice_magic")],
@@ -27,10 +28,16 @@ def get_menu_keyboard():
 
 def register(application):
     async def start(update, context):
-        caption = (
-            "✨ *Welcome to the Frozen Queen's Realm!* ✨\n"
-            "I am the *Frozen Queen*, ruler of ice and magic. Explore my kingdom below!"
-        )
+        # First send the audio
+        with open(AUDIO_PATH, "rb") as audio:
+            await update.message.reply_audio(
+                audio=audio,
+                caption="🎵 *A magical gift from the Frozen Queen* 🎵",
+                parse_mode="Markdown"
+            )
+        
+        # Then send the welcome message with image
+        caption = "✨ *Welcome to the Frozen Queen's Realm!* ✨\nI am the *Frozen Queen*!"
         with open(IMAGE_PATH, "rb") as photo:
             await update.message.reply_photo(
                 photo=photo,
@@ -41,38 +48,50 @@ def register(application):
 
     async def button_handler(update, context):
         query = update.callback_query
-        await query.answer()  # Acknowledge button press
+        await query.answer()
         
+        # Menu navigation handling
         current_caption = query.message.caption
         new_caption = ""
         new_markup = None
 
         if query.data == "menu":
-            new_caption = "❄️ *The Frozen Menu* ❄️\nChoose your icy path:"
+            new_caption = "❄️ *The Frozen Menu* ❄️"
             new_markup = get_menu_keyboard()
         elif query.data == "owner":
-            new_caption = "👑 *The Frozen Queen’s Creator* 👑\nBow to the one who forged this realm!"
+            new_caption = "👑 *The Frozen Queen's Creator* 👑"
             new_markup = get_welcome_keyboard()
-        elif query.data == "ice_magic":
-            new_caption = "✨ *Ice Magic* ✨\nCast spells of frost and wonder!"
-            new_markup = get_menu_keyboard()
-        elif query.data == "snow_games":
-            new_caption = "❄️ *Snow Games* ❄️\nPlay in the eternal snowfields!"
-            new_markup = get_menu_keyboard()
-        elif query.data == "frost_help":
-            new_caption = "🛡️ *Frost Help* 🛡️\nNeed aid in the icy realm? Ask away!"
-            new_markup = get_menu_keyboard()
         elif query.data == "back":
-            new_caption = "✨ *Welcome to the Frozen Queen's Realm!* ✨\nI am the *Frozen Queen*, ruler of ice and magic."
+            new_caption = "✨ *Welcome back!* ✨"
             new_markup = get_welcome_keyboard()
+        else:
+            new_caption = f"❄️ *{query.data.replace('_', ' ').title()}* ❄️"
+            new_markup = get_menu_keyboard()
 
-        # Only edit if caption or markup changes
-        if current_caption != new_caption or query.message.reply_markup != new_markup:
-            await query.edit_message_caption(
-                caption=new_caption,
-                parse_mode="Markdown",
-                reply_markup=new_markup
-            )
+        await query.edit_message_caption(
+            caption=new_caption,
+            parse_mode="Markdown",
+            reply_markup=new_markup
+        )
 
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CallbackQueryHandler(button_handler))
+
+# Audio download function
+import requests
+def download_audio():
+    os.makedirs("src", exist_ok=True)
+    url = "https://github.com/chathurahansaka1/help/raw/main/audio/WhatsApp%20Audio%202025-03-18%20at%203.13.40%20AM.mpeg"
+    if not os.path.exists(AUDIO_PATH):
+        print("Downloading audio file...")
+        r = requests.get(url, stream=True)
+        if r.status_code == 200:
+            with open(AUDIO_PATH, 'wb') as f:
+                for chunk in r.iter_content(1024):
+                    f.write(chunk)
+            print("Audio downloaded successfully!")
+        else:
+            print(f"Failed to download audio. Status code: {r.status_code}")
+
+if __name__ == "__main__":
+    download_audio()
