@@ -4,7 +4,7 @@ import os
 
 # Paths
 IMAGE_PATH = os.path.join("src", "frozen.jpg")
-AUDIO_PATH = os.path.join("src", "frozen.mpeg")
+AUDIO_PATH = os.path.join("src", "WhatsApp Audio 2025-03-18 at 3.25.32 AM.mpeg")
 
 # Main welcome keyboard
 def get_welcome_keyboard():
